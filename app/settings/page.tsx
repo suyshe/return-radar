@@ -8,15 +8,10 @@ import {
   Settings as SettingsIcon, 
   User, 
   Bell, 
-  Database, 
   Download, 
-  RotateCcw, 
-  Check, 
-  Sparkles, 
+  RotateCcw,
   CheckCircle2, 
   AlertCircle,
-  ExternalLink,
-  Trash2
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -24,26 +19,48 @@ export default function SettingsPage() {
     userProfile, 
     updateUserProfile, 
     products, 
-    resetDemoData, 
-    isDemoMode,
-    isSupabaseActive 
+    resetDemoData,
+    isDemoMode
   } = useApp();
 
-  const [fullName, setFullName] = useState(userProfile.fullName);
-  const [preferredCurrency, setPreferredCurrency] = useState(userProfile.preferredCurrency);
-  const [emailAlerts, setEmailAlerts] = useState(userProfile.emailNotificationsEnabled);
+  const [profileDraft, setProfileDraft] = useState(() => ({
+    id: userProfile.id,
+    fullName: userProfile.fullName,
+    preferredCurrency: userProfile.preferredCurrency,
+    emailAlerts: userProfile.emailNotificationsEnabled
+  }));
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [testNotificationSent, setTestNotificationSent] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateUserProfile({
-      fullName,
-      preferredCurrency,
-      emailNotificationsEnabled: emailAlerts
+  if (profileDraft.id !== userProfile.id) {
+    setProfileDraft({
+      id: userProfile.id,
+      fullName: userProfile.fullName,
+      preferredCurrency: userProfile.preferredCurrency,
+      emailAlerts: userProfile.emailNotificationsEnabled
     });
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+  }
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    setProfileError(null);
+    setSavedSuccess(false);
+    try {
+      await updateUserProfile({
+        fullName: profileDraft.fullName.trim(),
+        preferredCurrency: profileDraft.preferredCurrency,
+        emailNotificationsEnabled: profileDraft.emailAlerts
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (error) {
+      console.error('Unable to save account preferences.', error);
+      setProfileError(error instanceof Error ? error.message : 'Unable to save your changes right now.');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handleExportJSON = () => {
@@ -85,6 +102,12 @@ export default function SettingsPage() {
           </div>
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
+            {profileError && (
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{profileError}</span>
+              </div>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
@@ -92,8 +115,10 @@ export default function SettingsPage() {
                 </label>
                 <input
                   type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  maxLength={100}
+                  value={profileDraft.fullName}
+                  onChange={(e) => setProfileDraft((draft) => ({ ...draft, fullName: e.target.value }))}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
@@ -106,8 +131,14 @@ export default function SettingsPage() {
                   type="email"
                   disabled
                   value={userProfile.email}
+                  placeholder="Not signed in"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-800/40 border border-zinc-800 text-zinc-400 text-xs cursor-not-allowed"
                 />
+                <p className="mt-1.5 text-[11px] text-zinc-500">
+                  {isDemoMode
+                    ? 'Demo profile information is stored on this device.'
+                    : 'This is the email address linked to your signed-in account.'}
+                </p>
               </div>
             </div>
 
@@ -116,8 +147,8 @@ export default function SettingsPage() {
                 Default Currency
               </label>
               <select
-                value={preferredCurrency}
-                onChange={(e) => setPreferredCurrency(e.target.value)}
+                value={profileDraft.preferredCurrency}
+                onChange={(e) => setProfileDraft((draft) => ({ ...draft, preferredCurrency: e.target.value }))}
                 className="w-full max-w-xs px-3.5 py-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 {CURRENCIES.map((c) => (
@@ -131,9 +162,10 @@ export default function SettingsPage() {
             <div className="pt-2">
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all"
+                disabled={savingProfile}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 transition-all disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Save Preferences
+                {savingProfile ? 'Saving…' : 'Save Preferences'}
               </button>
             </div>
           </form>
@@ -156,8 +188,8 @@ export default function SettingsPage() {
               </div>
               <input
                 type="checkbox"
-                checked={emailAlerts}
-                onChange={(e) => setEmailAlerts(e.target.checked)}
+                checked={profileDraft.emailAlerts}
+                onChange={(e) => setProfileDraft((draft) => ({ ...draft, emailAlerts: e.target.checked }))}
                 className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-indigo-600 focus:ring-indigo-500"
               />
             </div>

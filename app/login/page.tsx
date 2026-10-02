@@ -30,6 +30,11 @@ setError(null);
 
 try {
   const supabase = createClient();
+  if (!supabase) {
+    setError('Supabase is not configured. Please use Guest mode or contact support.');
+    setLoading(false);
+    return;
+  }
 
   const { error: signInError } =
     await supabase.auth.signInWithPassword({
@@ -185,7 +190,7 @@ return (
     </div>
 
     <p className="text-center text-xs text-zinc-400">
-      Don't have an account yet?{' '}
+      Don&apos;t have an account yet?{' '}
       <Link
         href="/signup"
         className="font-semibold text-indigo-400 hover:text-indigo-300"

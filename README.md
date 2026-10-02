@@ -81,10 +81,12 @@ To connect your own live Supabase PostgreSQL database:
 3. Copy your project credentials and add them to `.env.local`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-here
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
    NEXT_PUBLIC_APP_URL=http://localhost:3000
    ```
-4. Restart your dev server. ReturnRadar will automatically switch from Demo Mode to live PostgreSQL with Row Level Security enabled.
+   The service-role key is server-only and is required for account deletion. Never expose it with a `NEXT_PUBLIC_` variable.
+4. Restart your dev server. Signed-in users see their Supabase account details in the account menu and settings; account deletion permanently removes the user's Supabase account and related rows with cascading foreign keys.
 
 ---
 
@@ -94,7 +96,8 @@ To connect your own live Supabase PostgreSQL database:
 2. Import the project into [Vercel](https://vercel.com/new).
 3. (Optional) Set the following Environment Variables in the Vercel project settings:
    - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for account deletion)
    - `NEXT_PUBLIC_APP_URL`
 4. Click **Deploy**. Vercel will build and host ReturnRadar on its global edge network.
 

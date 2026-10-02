@@ -16,7 +16,7 @@ import {
   UserProfile, 
   DashboardStats, 
   FilterOptions, 
-  ProductStatus 
+  ProductCategory
 } from '../types';
 import { 
   calculateReturnDeadline, 
@@ -43,7 +43,7 @@ interface AppContextType {
   addProduct: (productData: {
     name: string;
     store: string;
-    category: any;
+    category: ProductCategory;
     price: number;
     currency: string;
     purchaseDate: string;
@@ -61,7 +61,7 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   resetDemoData: () => void;
-  updateUserProfile: (profile: Partial<UserProfile>) => void;
+  updateUserProfile: (profile: Partial<UserProfile>) => Promise<void>;
 }
 
 const STORAGE_KEYS = {
@@ -82,12 +82,32 @@ const initialFilters: FilterOptions = {
 
 const defaultProfile: UserProfile = {
   id: 'demo-user',
-  email: 'alex.morgan@example.com',
-  fullName: 'Alex Morgan',
+  email: '',
+  fullName: 'Guest User',
   preferredCurrency: 'USD',
   notifyDaysBefore: [7, 3, 1],
   emailNotificationsEnabled: true
 };
+
+function profileFromAuthUser(
+  user: { id: string; email?: string; user_metadata?: Record<string, unknown> },
+  savedProfile?: UserProfile
+): UserProfile {
+  const email = user.email ?? '';
+  const metadataName = user.user_metadata?.full_name;
+
+  return {
+    id: user.id,
+    email,
+    fullName:
+      (typeof metadataName === 'string' && metadataName.trim()) ||
+      email.split('@')[0] ||
+      'User',
+    preferredCurrency: savedProfile?.preferredCurrency ?? 'USD',
+    notifyDaysBefore: savedProfile?.notifyDaysBefore ?? [7, 3, 1],
+    emailNotificationsEnabled: savedProfile?.emailNotificationsEnabled ?? true
+  };
+}
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -97,19 +117,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile>(defaultProfile);
   const [filterOptions, setFilterOptionsState] = useState<FilterOptions>(initialFilters);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(true);
-  const [isSupabaseActive, setIsSupabaseActive] = useState<boolean>(false);
+  const [isSupabaseActive] = useState<boolean>(isSupabaseConfigured());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Initialize data on mount
   useEffect(() => {
     const hasSupabase = isSupabaseConfigured();
-    setIsSupabaseActive(hasSupabase);
+    const supabase = hasSupabase ? createClient() : null;
 
     try {
       // Check local storage for existing session / mock data
       const savedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       const savedNotifs = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
       const savedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      const parsedProfile = savedProfile
+        ? (JSON.parse(savedProfile) as UserProfile)
+        : undefined;
 
       if (savedProducts) {
         // Recompute dynamic status based on current date
@@ -118,6 +141,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...p,
           status: getDeadlineStatus(p.returnDeadline, p.status)
         }));
+        // Restoring persisted browser state requires client-side hydration.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setProducts(refreshed);
       } else {
         const initial = getInitialMockProducts();
@@ -133,8 +158,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(initialNotifs));
       }
 
-      if (savedProfile) {
-        setUserProfile(JSON.parse(savedProfile));
+      if (parsedProfile?.id === 'demo-user') {
+        setUserProfile({ ...defaultProfile, ...parsedProfile });
+      }
+
+      if (supabase) {
+        const applyAuthUser = (
+          user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null
+        ) => {
+          if (!user) {
+            setIsDemoMode(true);
+            setUserProfile(
+              parsedProfile?.id === 'demo-user'
+                ? { ...defaultProfile, ...parsedProfile }
+                : defaultProfile
+            );
+            return;
+          }
+
+          setIsDemoMode(false);
+          const profileForUser = parsedProfile?.id === user.id ? parsedProfile : undefined;
+          setUserProfile((currentProfile) =>
+            profileFromAuthUser(
+              user,
+              currentProfile.id === user.id ? currentProfile : profileForUser
+            )
+          );
+        };
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+          applyAuthUser(session?.user ?? null);
+        });
+
+        void supabase.auth.getUser().then(({ data, error }) => {
+          if (error) {
+            console.error('Unable to load the signed-in user.', error);
+            return;
+          }
+          applyAuthUser(data.user);
+        });
+
+        return () => authListener.subscription.unsubscribe();
       }
     } catch (e) {
       console.warn('LocalStorage error, falling back to in-memory state', e);
@@ -179,7 +243,7 @@ const setFilterOptions = useCallback(
   const addProduct = async (data: {
     name: string;
     store: string;
-    category: any;
+    category: ProductCategory;
     price: number;
     currency: string;
     purchaseDate: string;
@@ -313,12 +377,28 @@ const setFilterOptions = useCallback(
     } catch {}
   };
 
-  const updateUserProfile = (profileUpdates: Partial<UserProfile>) => {
+  const updateUserProfile = async (profileUpdates: Partial<UserProfile>) => {
+    if (!isDemoMode && profileUpdates.fullName !== undefined) {
+      const supabase = createClient();
+      if (!supabase) {
+        throw new Error('Unable to connect to your account right now.');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: profileUpdates.fullName.trim() }
+      });
+      if (error) {
+        throw error;
+      }
+    }
+
     const updated = { ...userProfile, ...profileUpdates };
     setUserProfile(updated);
     try {
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(updated));
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to save profile preferences', error);
+    }
   };
 
   // Compute Dashboard Statistics

@@ -9,6 +9,12 @@ export async function GET(request: Request) {
 
   if (tokenHash && type === "email") {
     const supabase = await createClient();
+    if (!supabase) {
+      return NextResponse.json(
+        { error: "Email verification is unavailable because Supabase is not configured." },
+        { status: 503 }
+      );
+    }
 
     const { error } = await supabase.auth.verifyOtp({
       type: "email",

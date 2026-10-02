@@ -35,6 +35,11 @@ setSuccess(false);
 
 try {
   const supabase = createClient();
+  if (!supabase) {
+    setError('Supabase is not configured. Please contact support.');
+    setLoading(false);
+    return;
+  }
 
   const { data, error: signUpError } =
     await supabase.auth.signUp({
