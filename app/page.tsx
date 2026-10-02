@@ -42,12 +42,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-white">
-      {/* Top Announcement Bar */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-600 to-purple-700 py-2 px-4 text-center text-xs font-medium text-white flex items-center justify-center gap-2">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>Americans lose over $50 billion every year in missed return windows. Track yours today!</span>
-      </div>
-
+      
       {/* Navigation */}
       <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">

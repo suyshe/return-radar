@@ -30,7 +30,7 @@ export function Navbar({ onOpenAddModal, onToggleSidebar }: NavbarProps) {
             </button>
           )}
 
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 shadow-md shadow-indigo-600/30 group-hover:scale-105 transition-transform">
               <Radar className="h-5 w-5 text-white animate-spin-slow" />
             </div>

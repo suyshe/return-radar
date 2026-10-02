@@ -66,7 +66,7 @@ export default function SettingsPage() {
             <span>Settings & Preferences</span>
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Configure your notifications, display currency, and database connectivity.
+            Configure your notifications and display currency.
           </p>
         </div>
 
@@ -176,42 +176,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* 3. Database & Deployment Architecture */}
-        <div className="rounded-2xl bg-zinc-900/80 border border-zinc-800 p-6 shadow-lg space-y-6">
-          <div className="flex items-center gap-2 pb-4 border-b border-zinc-800">
-            <Database className="w-5 h-5 text-blue-400" />
-            <h2 className="text-base font-bold text-white">Supabase / PostgreSQL Connectivity</h2>
-          </div>
-
-          <div className="p-4 rounded-xl bg-zinc-950/70 border border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-white">Current Backend Mode</span>
-              {isSupabaseActive ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Live Supabase PostgreSQL
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Local Engine (Demo / Offline Ready)
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              {isSupabaseActive 
-                ? 'Your app is authenticated and connected to your production Supabase database with Row Level Security enabled.'
-                : 'ReturnRadar is currently operating in instantaneous zero-config Demo Mode with full browser persistence. To connect your live Supabase database, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local or Vercel Environment Variables.'}
-            </p>
-
-            <div className="text-[11px] text-zinc-400 bg-zinc-900 p-3 rounded-lg border border-zinc-800 font-mono">
-              supabase/schema.sql included in repo ready for 1-click execution in Supabase SQL editor.
-            </div>
-          </div>
-        </div>
-
-        {/* 4. Data Export & Reset */}
+        {/* 3. Data Export & Reset */}
         <div className="rounded-2xl bg-zinc-900/80 border border-zinc-800 p-6 shadow-lg space-y-4">
           <h2 className="text-base font-bold text-white">Data Management</h2>
           <div className="flex flex-wrap items-center gap-3">
