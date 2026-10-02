@@ -43,12 +43,28 @@ function ProductsContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Sync url param if ?status=expiring_soon passed
-  useEffect(() => {
-    const statusParam = searchParams.get('status');
-    if (statusParam && ['active', 'expiring_soon', 'expired', 'returned'].includes(statusParam)) {
-      setFilterOptions({ status: statusParam as ProductStatus });
+useEffect(() => {
+  const statusParam = searchParams.get('status');
+
+  if (
+    statusParam &&
+    ['active', 'expiring_soon', 'expired', 'returned'].includes(statusParam)
+  ) {
+    const nextStatus = statusParam as ProductStatus;
+
+    // Don't update state if the filter is already correct.
+    if (filterOptions.status !== nextStatus) {
+      setFilterOptions({
+        status: nextStatus,
+      });
     }
-  }, [searchParams, setFilterOptions]);
+  }
+}, [
+  searchParams,
+  filterOptions.status,
+  setFilterOptions,
+]);
+
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);

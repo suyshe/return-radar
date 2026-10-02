@@ -1,6 +1,15 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  ReactNode
+} from 'react';
+
 import { 
   Product, 
   NotificationItem, 
@@ -155,9 +164,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setFilterOptions = (options: Partial<FilterOptions>) => {
-    setFilterOptionsState(prev => ({ ...prev, ...options }));
-  };
+const setFilterOptions = useCallback(
+  (options: Partial<FilterOptions>) => {
+    setFilterOptionsState(prev => ({
+      ...prev,
+      ...options,
+    }));
+  },
+  []
+);
+
 
   // Add Product
   const addProduct = async (data: {
